@@ -3,7 +3,7 @@ name: Deploy to AWS S3
 on:
   push:
     branches:
-      - deploy_aws  # Trigger deployment when pushing to the deploy_aws branch
+      - deploy_aws  # Trigger deployment when pushing to the deploy_aws branch now
 
 jobs:
   deploy:
