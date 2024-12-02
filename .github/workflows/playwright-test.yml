@@ -1,0 +1,56 @@
+name: Run Playwright Tests
+
+on:
+  push:
+    branches:
+      - main # Replace with your branch name if different
+
+jobs:
+  playwright-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Checkout the repository
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Set up Node.js environment
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18' # Use the Node.js version your project requires
+
+    # Install dependencies
+    - name: Install dependencies
+      run: npm install
+
+    # Start the server
+    - name: Start the server
+      run: npm run start &
+      env:
+        PORT: 3000 # Replace with the port your server runs on
+      # Background server process is started, allowing tests to run against it
+
+    # Wait for the server to be ready
+    - name: Wait for the server
+      run: |
+        echo "Waiting for server to start..."
+        timeout 30s bash -c 'until curl -s http://localhost:3000; do sleep 1; done'
+      # Adjust URL and port as needed
+
+    # Run Playwright tests
+    - name: Run Playwright tests
+      run: npx playwright test
+
+    # Upload Playwright Test Results
+    - name: Upload Playwright report
+      if: failure() # Only run if tests fail
+      uses: actions/upload-artifact@v3
+      with:
+        name: playwright-report
+        path: playwright-report
+
+    # Shut down the server
+    - name: Shut down the server
+      if: always() # Ensure this runs even if tests fail
+      run: kill $(lsof -t -i:3000) || true
