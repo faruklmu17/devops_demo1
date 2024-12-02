@@ -3,23 +3,49 @@ name: Deploy to AWS S3
 on:
   push:
     branches:
-      - deploy_aws  # Trigger deployment when pushing to the deploy_aws branch now
+      - main  # Trigger deployment on push to the 'main' branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
     steps:
+      # Step 1: Checkout the code from the repository
       - name: Checkout code
         uses: actions/checkout@v3
+
+      # Step 2: Set up AWS credentials using GitHub secrets
       - name: Set up AWS CLI
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-      - name: Sync website files to S3
+          aws-region: us-east-1  # Adjust the region if needed
+
+      # Step 3: Debug - Print confirmation message (do not print secrets)
+      - name: Debugging - Check if secrets are available
         run: |
-          aws s3 sync ./devops_demo1/ s3://mywebsite-static-site --delete --region us-east-1
+          if [[ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" || -z "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]]; then
+            echo "AWS credentials are missing!"
+          else
+            echo "AWS credentials are set correctly."
+          fi
+
+      # Step 4: Install AWS CLI (if needed)
+      - name: Install AWS CLI
+        run: |
+          curl "https://d1vvhvl2y92vvt.cloudfront.net/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+
+      # Step 5: Sync files to the S3 bucket (replace YOUR-BUCKET-NAME with your bucket's name)
+      - name: Deploy to S3
+        run: |
+          aws s3 sync ./ s3://YOUR-BUCKET-NAME --exclude '.git/*' --delete
+
+      # Step 6: (Optional) Invalidate CloudFront cache if using CloudFront with S3
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation --distribution-id YOUR-DISTRIBUTION-ID --paths "/*"
+
+
