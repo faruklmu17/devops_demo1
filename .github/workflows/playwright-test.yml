@@ -28,7 +28,7 @@ jobs:
     - name: Install Playwright browsers
       run: npx playwright install
 
-    # Step 5: Start a local server now
+    # Step 5: Start a local server
     - name: Start local server
       run: |
         npx http-server ./ -p 5500 &
