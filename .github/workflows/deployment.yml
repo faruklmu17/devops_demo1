@@ -1,0 +1,68 @@
+name: Local Server Tests and Manual Deployment to GitHub Pages
+
+on:
+  push:
+    branches:
+      - deployment  # Trigger on push to the `deployment` branch
+
+jobs:
+  playwright-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout repository
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Step 2: Set up Node.js
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'  # Use a compatible version
+
+    # Step 3: Install dependencies
+    - name: Install dependencies
+      run: npm install
+
+    # Step 4: Install Playwright browsers
+    - name: Install Playwright browsers
+      run: npx playwright install
+
+    # Step 5: Start a local server
+    - name: Start local server
+      run: |
+        npx http-server ./ -p 5500 &
+        echo "Waiting for server to start..."
+        timeout 30s bash -c 'until curl -s http://127.0.0.1:5500/index.html; do sleep 1; done'
+
+    # Step 6: Run Playwright tests
+    - name: Run Playwright tests
+      run: npx playwright test
+      env:
+        BASE_URL: http://127.0.0.1:5500
+
+  deploy:
+    needs: playwright-tests  # Deploy job depends on the tests
+    if: success()  # Only deploy if tests pass
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout repository
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Step 2: Set up GitHub Pages deployment
+    - name: Deploy to GitHub Pages
+      uses: JamesIves/github-pages-deploy-action@v4.2.0
+      with:
+        branch: gh-pages  # Deploy to gh-pages branch
+        folder: ./public  # Or the folder you want to deploy (e.g., './build', './dist', etc.)
+
+    # Step 3: Commit and push to `gh-pages`
+    - name: Commit and Push changes to `gh-pages`
+      run: |
+        git config --global user.name "github-actions"
+        git config --global user.email "github-actions@github.com"
+        git add .
+        git commit -m "Deploy to GitHub Pages after passing Playwright tests"
+        git push origin gh-pages  # Push changes to the gh-pages branch
