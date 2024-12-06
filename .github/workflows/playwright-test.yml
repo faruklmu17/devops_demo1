@@ -10,25 +10,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # Step 1: Checkout repository now
+    # Step 1:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    # Step 2: Set up Node.js
+    # Step 2:
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '20' #latest version
+        node-version: '20'
 
-    # Step 3: Install dependencies as needed
+    # Step 3:
     - name: Install dependencies
       run: npm install
 
-    # Step 4: Install Playwright browsers
+    # Step 4:
     - name: Install Playwright browsers
       run: npx playwright install
 
-    # Step 5: Start a local server
+    # Step 5: Start a local server now
     - name: Start local server
       run: |
         npx http-server ./ -p 5500 &
